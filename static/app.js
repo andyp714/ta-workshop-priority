@@ -14,10 +14,12 @@ async function fetchTasks() {
         taskDetails.className = 'task-details';
 
         const title = document.createElement('span');
+        title.className = 'task-title';
         title.textContent = task.title;
 
         const priorityBadge = document.createElement('span');
-        priorityBadge.className = `priority priority-${priority.toLowerCase()}`;
+        priorityBadge.className =
+            `priority priority-${priority.toLowerCase()}`;
         priorityBadge.textContent = priority;
 
         taskDetails.appendChild(title);
@@ -41,13 +43,19 @@ async function addTask() {
     const title = titleInput.value.trim();
     const priority = priorityInput.value || 'Medium';
 
-    if (!title) return;
+    if (!title) {
+        return;
+    }
 
-    await fetch('/api/tasks', {
+    const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, priority })
     });
+
+    if (!response.ok) {
+        return;
+    }
 
     titleInput.value = '';
     priorityInput.value = 'Medium';

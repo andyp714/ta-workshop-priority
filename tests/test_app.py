@@ -37,8 +37,8 @@ def test_index(client):
     assert b'<option value="High">High</option>' in response.data
 
 
-def test_get_tasks(client):
-    """Return existing tasks with Medium as the missing priority default."""
+def test_get_tasks_defaults_missing_priority_to_medium(client):
+    """Return Medium for existing tasks without a priority."""
     response = client.get('/api/tasks')
 
     assert response.status_code == 200
@@ -47,8 +47,8 @@ def test_get_tasks(client):
     assert all(task['priority'] == 'Medium' for task in data)
 
 
-def test_add_task_success(client):
-    """Create a task without priority and default it to Medium."""
+def test_add_task_without_priority_defaults_to_medium(client):
+    """Create a task without priority using the Medium default."""
     response = client.post('/api/tasks', json={"title": "Test new task"})
 
     assert response.status_code == 201
@@ -57,12 +57,21 @@ def test_add_task_success(client):
         "title": "Test new task",
         "priority": "Medium",
     }
-    get_response = client.get('/api/tasks')
-    assert len(get_response.get_json()) == 3
+
+
+def test_add_task_with_empty_priority_defaults_to_medium(client):
+    """Create a task with an empty priority using the Medium default."""
+    response = client.post(
+        '/api/tasks',
+        json={"title": "Empty priority task", "priority": ""},
+    )
+
+    assert response.status_code == 201
+    assert response.get_json()['priority'] == 'Medium'
 
 
 @pytest.mark.parametrize('priority', ['Low', 'Medium', 'High'])
-def test_add_task_supported_priorities(client, priority):
+def test_add_task_supports_all_priorities(client, priority):
     """Create tasks with each supported priority value."""
     response = client.post(
         '/api/tasks',
@@ -74,7 +83,7 @@ def test_add_task_supported_priorities(client, priority):
 
 
 def test_invalid_priority_defaults_to_medium(client):
-    """Default invalid priority values to Medium."""
+    """Create a task with an unsupported priority using Medium."""
     response = client.post(
         '/api/tasks',
         json={"title": "Invalid priority task", "priority": "Urgent"},
@@ -101,13 +110,14 @@ def test_priority_persists_in_get_response(client):
 
 
 def test_frontend_renders_priority_badges():
-    """Ensure the frontend renders priority values and fallback behavior."""
+    """Ensure frontend rendering includes priority and its fallback."""
     project_root = Path(__file__).resolve().parents[1]
     app_script = (project_root / 'static' / 'app.js').read_text()
 
-    assert 'task.priority || \'Medium\'' in app_script
+    assert "task.priority || 'Medium'" in app_script
     assert 'priorityBadge' in app_script
     assert 'priority-${priority.toLowerCase()}' in app_script
+    assert "body: JSON.stringify({ title, priority })" in app_script
 
 
 def test_add_task_missing_title(client):

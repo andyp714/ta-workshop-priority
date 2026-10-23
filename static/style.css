@@ -38,6 +38,12 @@ select {
     font: inherit;
 }
 
+#task-priority {
+    flex: 0 0 auto;
+    min-width: 110px;
+    background-color: white;
+}
+
 button {
     background-color: #007bff;
     color: white;
@@ -75,6 +81,10 @@ li:last-child {
     align-items: center;
     gap: 10px;
     min-width: 0;
+}
+
+.task-title {
+    overflow-wrap: anywhere;
 }
 
 .priority {
