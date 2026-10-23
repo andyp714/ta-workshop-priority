@@ -13,12 +13,18 @@ next_id = 3
 
 
 def normalize_priority(priority):
-    """Return a supported priority or the default priority."""
+    """Return a supported priority or the default for empty values."""
+    if priority is None:
+        return DEFAULT_PRIORITY
+
     if isinstance(priority, str):
-        normalized_priority = priority.strip().capitalize()
+        normalized_priority = priority.strip()
+        if not normalized_priority:
+            return DEFAULT_PRIORITY
         if normalized_priority in PRIORITIES:
             return normalized_priority
-    return DEFAULT_PRIORITY
+
+    raise ValueError("Invalid priority")
 
 
 @app.route('/')
@@ -31,7 +37,10 @@ def index():
 def get_tasks():
     """Return all tasks with a default priority when it is missing."""
     for task in tasks:
-        task['priority'] = normalize_priority(task.get('priority'))
+        try:
+            task['priority'] = normalize_priority(task.get('priority'))
+        except ValueError:
+            task['priority'] = DEFAULT_PRIORITY
     return jsonify(tasks)
 
 
@@ -44,7 +53,11 @@ def add_task():
     if not isinstance(data, dict) or not data.get('title'):
         return jsonify({"error": "Title is required"}), 400
 
-    priority = normalize_priority(data.get('priority'))
+    try:
+        priority = normalize_priority(data.get('priority'))
+    except ValueError:
+        priority = DEFAULT_PRIORITY
+
     new_task = {
         "id": next_id,
         "title": data['title'],
